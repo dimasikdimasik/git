@@ -381,8 +381,6 @@ static int add(int ac, const char **av, const char *prefix)
 		branch = opts.new_branch;
 	}
 
-	UNLEAK(path);
-	UNLEAK(opts);
 	return add_worktree(path, branch, &opts);
 }
 

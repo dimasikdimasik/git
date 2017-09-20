@@ -508,7 +508,7 @@ int cmd_describe(int argc, const char **argv, const char *prefix)
 
 	hashmap_init(&names, commit_name_cmp, NULL, 0);
 	for_each_rawref(get_name, NULL);
-	if (!hashmap_get_size(&names) && !always)
+	if (!names.size && !always)
 		die(_("No names found, cannot describe anything."));
 
 	if (argc == 0) {

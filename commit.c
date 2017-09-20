@@ -1570,13 +1570,10 @@ int commit_tree_extended(const char *msg, size_t msg_len,
 	if (encoding_is_utf8 && !verify_utf8(&buffer))
 		fprintf(stderr, _(commit_utf8_warn));
 
-	if (sign_commit && do_sign_commit(&buffer, sign_commit)) {
-		result = -1;
-		goto out;
-	}
+	if (sign_commit && do_sign_commit(&buffer, sign_commit))
+		return -1;
 
 	result = write_sha1_file(buffer.buf, buffer.len, commit_type, ret);
-out:
 	strbuf_release(&buffer);
 	return result;
 }

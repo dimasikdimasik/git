@@ -44,11 +44,10 @@ static inline int is_merge(void)
 
 static int reset_index(const struct object_id *oid, int reset_type, int quiet)
 {
-	int i, nr = 0;
+	int nr = 1;
 	struct tree_desc desc[2];
 	struct tree *tree;
 	struct unpack_trees_options opts;
-	int ret = -1;
 
 	memset(&opts, 0, sizeof(opts));
 	opts.head_idx = 1;
@@ -76,32 +75,23 @@ static int reset_index(const struct object_id *oid, int reset_type, int quiet)
 		struct object_id head_oid;
 		if (get_oid("HEAD", &head_oid))
 			return error(_("You do not have a valid HEAD."));
-		if (!fill_tree_descriptor(desc + nr, &head_oid))
+		if (!fill_tree_descriptor(desc, &head_oid))
 			return error(_("Failed to find tree of HEAD."));
 		nr++;
 		opts.fn = twoway_merge;
 	}
 
-	if (!fill_tree_descriptor(desc + nr, oid)) {
-		error(_("Failed to find tree of %s."), oid_to_hex(oid));
-		goto out;
-	}
-	nr++;
-
+	if (!fill_tree_descriptor(desc + nr - 1, oid))
+		return error(_("Failed to find tree of %s."), oid_to_hex(oid));
 	if (unpack_trees(nr, desc, &opts))
-		goto out;
+		return -1;
 
 	if (reset_type == MIXED || reset_type == HARD) {
 		tree = parse_tree_indirect(oid);
 		prime_cache_tree(&the_index, tree);
 	}
 
-	ret = 0;
-
-out:
-	for (i = 0; i < nr; i++)
-		free((void *)desc[i].buffer);
-	return ret;
+	return 0;
 }
 
 static void print_new_head_line(struct commit *commit)
@@ -377,8 +367,8 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		die_if_unmerged_cache(reset_type);
 
 	if (reset_type != SOFT) {
-		struct lock_file lock = LOCK_INIT;
-		hold_locked_index(&lock, LOCK_DIE_ON_ERROR);
+		struct lock_file *lock = xcalloc(1, sizeof(*lock));
+		hold_locked_index(lock, LOCK_DIE_ON_ERROR);
 		if (reset_type == MIXED) {
 			int flags = quiet ? REFRESH_QUIET : REFRESH_IN_PORCELAIN;
 			if (read_from_tree(&pathspec, &oid, intent_to_add))
@@ -394,7 +384,7 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 				die(_("Could not reset index file to revision '%s'."), rev);
 		}
 
-		if (write_locked_index(&the_index, &lock, COMMIT_LOCK))
+		if (write_locked_index(&the_index, lock, COMMIT_LOCK))
 			die(_("Could not write new index file."));
 	}
 

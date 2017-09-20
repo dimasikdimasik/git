@@ -17,7 +17,4 @@ shebang.perl: FORCE
 test: all
 	$(MAKE) -C t
 
-clean:
-	$(RM) diff-highlight
-
 .PHONY: FORCE

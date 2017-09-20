@@ -671,7 +671,9 @@ static int detect_patch_format(const char **paths)
 		goto done;
 	}
 
+	strbuf_reset(&l2);
 	strbuf_getline(&l2, fp);
+	strbuf_reset(&l3);
 	strbuf_getline(&l3, fp);
 
 	/*
@@ -694,8 +696,6 @@ static int detect_patch_format(const char **paths)
 done:
 	fclose(fp);
 	strbuf_release(&l1);
-	strbuf_release(&l2);
-	strbuf_release(&l3);
 	return ret;
 }
 
@@ -881,7 +881,6 @@ static int split_mail_stgit_series(struct am_state *state, const char **paths,
 static int hg_patch_to_mail(FILE *out, FILE *in, int keep_cr)
 {
 	struct strbuf sb = STRBUF_INIT;
-	int rc = 0;
 
 	while (!strbuf_getline_lf(&sb, in)) {
 		const char *str;
@@ -895,27 +894,19 @@ static int hg_patch_to_mail(FILE *out, FILE *in, int keep_cr)
 
 			errno = 0;
 			timestamp = parse_timestamp(str, &end, 10);
-			if (errno) {
-				rc = error(_("invalid timestamp"));
-				goto exit;
-			}
+			if (errno)
+				return error(_("invalid timestamp"));
 
-			if (!skip_prefix(end, " ", &str)) {
-				rc = error(_("invalid Date line"));
-				goto exit;
-			}
+			if (!skip_prefix(end, " ", &str))
+				return error(_("invalid Date line"));
 
 			errno = 0;
 			tz = strtol(str, &end, 10);
-			if (errno) {
-				rc = error(_("invalid timezone offset"));
-				goto exit;
-			}
+			if (errno)
+				return error(_("invalid timezone offset"));
 
-			if (*end) {
-				rc = error(_("invalid Date line"));
-				goto exit;
-			}
+			if (*end)
+				return error(_("invalid Date line"));
 
 			/*
 			 * mercurial's timezone is in seconds west of UTC,
@@ -940,9 +931,9 @@ static int hg_patch_to_mail(FILE *out, FILE *in, int keep_cr)
 		fwrite(sb.buf, 1, sb.len, out);
 		strbuf_reset(&sb);
 	}
-exit:
+
 	strbuf_release(&sb);
-	return rc;
+	return 0;
 }
 
 /**
@@ -2105,7 +2096,6 @@ static int safe_to_abort(const struct am_state *state)
 			die(_("could not parse %s"), am_path(state, "abort-safety"));
 	} else
 		oidclr(&abort_safety);
-	strbuf_release(&sb);
 
 	if (get_oid("HEAD", &head))
 		oidclr(&head);

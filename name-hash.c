@@ -584,15 +584,9 @@ static void lazy_init_name_hash(struct index_state *istate)
 	hashmap_init(&istate->dir_hash, dir_entry_cmp, NULL, istate->cache_nr);
 
 	if (lookup_lazy_params(istate)) {
-		/*
-		 * Disable item counting and automatic rehashing because
-		 * we do per-chain (mod n) locking rather than whole hashmap
-		 * locking and we need to prevent the table-size from changing
-		 * and bucket items from being redistributed.
-		 */
-		hashmap_disable_item_counting(&istate->dir_hash);
+		hashmap_disallow_rehash(&istate->dir_hash, 1);
 		threaded_lazy_init_name_hash(istate);
-		hashmap_enable_item_counting(&istate->dir_hash);
+		hashmap_disallow_rehash(&istate->dir_hash, 0);
 	} else {
 		int nr;
 		for (nr = 0; nr < istate->cache_nr; nr++)

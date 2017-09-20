@@ -1818,7 +1818,6 @@ int cmd_commit(int argc, const char **argv, const char *prefix)
 	if (!quiet)
 		print_summary(prefix, &oid, !current_head);
 
-	UNLEAK(err);
-	UNLEAK(sb);
+	strbuf_release(&err);
 	return 0;
 }

@@ -44,11 +44,6 @@ GIT_BUILD_DIR="$TEST_DIRECTORY"/..
 : ${ASAN_OPTIONS=detect_leaks=0:abort_on_error=1}
 export ASAN_OPTIONS
 
-# If LSAN is in effect we _do_ want leak checking, but we still
-# want to abort so that we notice the problems.
-: ${LSAN_OPTIONS=abort_on_error=1}
-export LSAN_OPTIONS
-
 ################################################################
 # It appears that people try to run tests without building...
 "$GIT_BUILD_DIR/git" >/dev/null
@@ -279,7 +274,7 @@ then
 	test -z "$verbose" && verbose_only="$valgrind_only"
 elif test -n "$valgrind"
 then
-	test -z "$verbose_log" && verbose=t
+	verbose=t
 fi
 
 if test -n "$color"
